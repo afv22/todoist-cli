@@ -2,6 +2,8 @@
 
 import click
 
+from .auth import with_token
+from .client import list_projects
 from .config import get_or_prompt_token, get_stored_token, reset_token
 
 
@@ -45,6 +47,13 @@ def reset():
         reset_token()
     else:
         click.echo("Cancelled.")
+
+
+@cli.command()
+@with_token
+def projects(token):
+    """List all active projects."""
+    list_projects(token)
 
 
 if __name__ == "__main__":
