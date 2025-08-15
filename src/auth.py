@@ -1,9 +1,8 @@
 """Authentication utilities for Todoist CLI."""
 
 import click
-from typing import Optional
 
-from .config import get_or_prompt_token
+from config import get_or_prompt_token
 
 
 def require_token() -> str:

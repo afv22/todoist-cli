@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "todoist-cli"
 version = "0.1.0"
 description = "A CLI wrapper around the Todoist Python SDK"
-authors = [{name = "Your Name", email = "your.email@example.com"}]
+authors = [{name = "Andrew Vagliano", email = "andrew.vagliano1@gmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.scripts]
-todo = "todoist_cli.main:cli"
+todo = "main:cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]

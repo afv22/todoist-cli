@@ -2,9 +2,9 @@
 
 import click
 
-from .auth import with_token
-from .client import list_projects, list_tasks
-from .config import get_or_prompt_token, get_stored_token, reset_token
+from auth import with_token
+from client import list_projects, list_tasks
+from config import get_or_prompt_token, get_stored_token, reset_token
 
 
 @click.group()
