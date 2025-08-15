@@ -3,7 +3,7 @@
 import click
 
 from .auth import with_token
-from .client import list_projects
+from .client import list_projects, list_tasks
 from .config import get_or_prompt_token, get_stored_token, reset_token
 
 
@@ -54,6 +54,14 @@ def reset():
 def projects(token):
     """List all active projects."""
     list_projects(token)
+
+
+@cli.command()
+@click.option('--project-name', help='Filter tasks by project name')
+@with_token
+def tasks(token, project_name):
+    """List all tasks, optionally filtered by project."""
+    list_tasks(token, project_name)
 
 
 if __name__ == "__main__":
