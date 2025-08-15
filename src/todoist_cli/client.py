@@ -1,7 +1,8 @@
 """Todoist API client wrapper."""
 
 from todoist_api_python.api import TodoistAPI
-from typing import Optional
+from todoist_api_python.models import Project, Section, Task
+from typing import Any, Dict, List, Optional, Iterator
 import click
 
 
@@ -14,16 +15,23 @@ def get_todoist_client(token: str) -> TodoistAPI:
         raise click.Abort()
 
 
+def _get_projects(token) -> List[Project]:
+    api = get_todoist_client(token)
+    projects_iterator = api.get_projects()
+    return _resolve_iterator(projects_iterator)
+
+
+def _resolve_iterator(iter: Iterator) -> List[Any]:
+    values = []
+    for project_list in iter:
+        values.extend(project_list)
+    return values
+
+
 def list_projects(token: str) -> None:
     """List all active projects with hierarchical structure."""
     try:
-        api = get_todoist_client(token)
-        projects_iterator = api.get_projects()
-
-        # Flatten the iterator of lists into a single list
-        all_projects = []
-        for project_list in projects_iterator:
-            all_projects.extend(project_list)
+        all_projects = _get_projects(token)
 
         if not all_projects:
             click.echo("No projects found.")
@@ -33,11 +41,11 @@ def list_projects(token: str) -> None:
         click.echo("-" * 40)
 
         # Create a map of parent projects and their children
-        parent_projects = []
-        child_projects = {}
+        parent_projects: List[Project] = []
+        child_projects: Dict[str, List[Project]] = {}
 
         for project in all_projects:
-            if hasattr(project, "parent_id") and project.parent_id:
+            if project.parent_id:
                 # This is a subproject
                 if project.parent_id not in child_projects:
                     child_projects[project.parent_id] = []
@@ -50,17 +58,17 @@ def list_projects(token: str) -> None:
         for project in parent_projects:
             # Show parent project
             indicators = []
-            if hasattr(project, "is_favorite") and project.is_favorite:
+            if project.is_favorite:
                 indicators.append("★")
 
             indicator_str = f" ({', '.join(indicators)})" if indicators else ""
             click.echo(f"• {project.name}{indicator_str}")
 
             # Show child projects with indentation
-            if hasattr(project, "id") and project.id in child_projects:
+            if project.id in child_projects:
                 for child in child_projects[project.id]:
                     child_indicators = []
-                    if hasattr(child, "is_favorite") and child.is_favorite:
+                    if child.is_favorite:
                         child_indicators.append("★")
 
                     child_indicator_str = (
@@ -79,18 +87,12 @@ def list_tasks(token: str, project_name: Optional[str] = None) -> None:
         api = get_todoist_client(token)
 
         # Get all projects to map project_id to project_name
-        projects_iterator = api.get_projects()
-        all_projects = []
-        for project_list in projects_iterator:
-            all_projects.extend(project_list)
-
+        all_projects = _get_projects(token)
         project_map = {project.id: project.name for project in all_projects}
 
         # Get all sections to map section_id to section_name
         sections_iterator = api.get_sections()
-        all_sections = []
-        for section_list in sections_iterator:
-            all_sections.extend(section_list)
+        all_sections: List[Section] = _resolve_iterator(sections_iterator)
 
         section_map = {section.id: section.name for section in all_sections}
         target_project_id = None
@@ -108,9 +110,7 @@ def list_tasks(token: str, project_name: Optional[str] = None) -> None:
 
         # Get tasks
         tasks_iterator = api.get_tasks(project_id=target_project_id)
-        all_tasks = []
-        for task_list in tasks_iterator:
-            all_tasks.extend(task_list)
+        all_tasks: List[Task] = _resolve_iterator(tasks_iterator)
 
         if not all_tasks:
             if project_name:
@@ -129,7 +129,7 @@ def list_tasks(token: str, project_name: Optional[str] = None) -> None:
         # Create a map of parent tasks and their subtasks
         subtasks = {}
         for task in all_tasks:
-            if hasattr(task, "parent_id") and task.parent_id:
+            if task.parent_id:
                 if task.parent_id not in subtasks:
                     subtasks[task.parent_id] = []
                 subtasks[task.parent_id].append(task)
@@ -138,11 +138,11 @@ def list_tasks(token: str, project_name: Optional[str] = None) -> None:
         projects_sections = {}
 
         for task in all_tasks:
-            if hasattr(task, "parent_id") and task.parent_id:
+            if task.parent_id:
                 continue  # Skip subtasks, they'll be handled with their parents
 
-            task_project_id = getattr(task, "project_id", None)
-            task_section_id = getattr(task, "section_id", None)
+            task_project_id = getattr(task, "project_id")
+            task_section_id = getattr(task, "section_id")
 
             project_name_key = project_map.get(task_project_id, "Unknown Project")
             section_name_key = (
