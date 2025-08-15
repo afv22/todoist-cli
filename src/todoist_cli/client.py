@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Iterator
 import click
 
 
-def get_todoist_client(token: str) -> TodoistAPI:
+def _get_todoist_client(token: str) -> TodoistAPI:
     """Create and return a Todoist API client."""
     try:
         return TodoistAPI(token)
@@ -16,7 +16,7 @@ def get_todoist_client(token: str) -> TodoistAPI:
 
 
 def _get_projects(token) -> List[Project]:
-    api = get_todoist_client(token)
+    api = _get_todoist_client(token)
     projects_iterator = api.get_projects()
     return _resolve_iterator(projects_iterator)
 
@@ -84,7 +84,7 @@ def list_projects(token: str) -> None:
 def get_task_by_id(token: str, task_id: str) -> None:
     """Get and display a specific task by its ID."""
     try:
-        api = get_todoist_client(token)
+        api = _get_todoist_client(token)
 
         # Get the specific task
         try:
@@ -138,7 +138,7 @@ def list_tasks(
         get_task_by_id(token, task_id)
         return
     try:
-        api = get_todoist_client(token)
+        api = _get_todoist_client(token)
 
         # Get all projects to map project_id to project_name
         all_projects = _get_projects(token)
@@ -195,15 +195,8 @@ def list_tasks(
             if task.parent_id:
                 continue  # Skip subtasks, they'll be handled with their parents
 
-            task_project_id = getattr(task, "project_id")
-            task_section_id = getattr(task, "section_id")
-
-            project_name_key = project_map.get(task_project_id, "Unknown Project")
-            section_name_key = (
-                section_map.get(task_section_id, "No Section")
-                if task_section_id
-                else "No Section"
-            )
+            project_name_key = project_map.get(task.project_id, "Unknown Project")
+            section_name_key = section_map.get(task.section_id or "", "No Section")
 
             if project_name_key not in projects_sections:
                 projects_sections[project_name_key] = {}
