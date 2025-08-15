@@ -57,11 +57,28 @@ def projects(token):
 
 
 @cli.command()
+@click.argument('task_id', required=False)
 @click.option('--project-name', help='Filter tasks by project name')
+@click.option('--id', 'task_id_option', help='Get a specific task by ID')
 @with_token
-def tasks(token, project_name):
-    """List all tasks, optionally filtered by project."""
-    list_tasks(token, project_name)
+def tasks(token, task_id, project_name, task_id_option):
+    """List all tasks, optionally filtered by project, or get a specific task by ID.
+    
+    Examples:
+    todo tasks                    # List all tasks
+    todo tasks --project-name Work # List tasks in Work project
+    todo tasks 123456789          # Get task with ID 123456789
+    todo tasks --id 123456789     # Get task with ID 123456789
+    """
+    # Determine which task ID to use (argument takes precedence over option)
+    final_task_id = task_id or task_id_option
+    
+    # Validate mutually exclusive options
+    if final_task_id and project_name:
+        click.echo("Error: Cannot use both task ID and project filter together.")
+        raise click.Abort()
+    
+    list_tasks(token, project_name, final_task_id)
 
 
 if __name__ == "__main__":

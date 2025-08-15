@@ -81,8 +81,62 @@ def list_projects(token: str) -> None:
         raise click.Abort()
 
 
-def list_tasks(token: str, project_name: Optional[str] = None) -> None:
-    """List all tasks with hierarchical structure for subtasks."""
+def get_task_by_id(token: str, task_id: str) -> None:
+    """Get and display a specific task by its ID."""
+    try:
+        api = get_todoist_client(token)
+
+        # Get the specific task
+        try:
+            task = api.get_task(task_id)
+        except Exception as e:
+            click.echo(f"Error: Task '{task_id}' not found or inaccessible.")
+            return
+
+        # Display task details
+        click.echo(f"📋 Task Details")
+        click.echo("=" * 50)
+
+        # Task content and basic info
+        task_info = []
+        if hasattr(task, "priority") and task.priority > 1:
+            task_info.append(f"p{task.priority}")
+        if hasattr(task, "due") and task.due:
+            task_info.append(
+                f"due: {task.due.date if hasattr(task.due, 'date') else task.due}"
+            )
+
+        task_info_str = f" ({', '.join(task_info)})" if task_info else ""
+        click.echo(f"\n• {task.content}{task_info_str}")
+
+        # Context information
+        click.echo(f"  ID: {task.id}")
+
+        project = api.get_project(task.project_id)
+        click.echo(f"  Project: {project.name}")
+
+        if task.section_id:
+            section = api.get_section(task.section_id)
+            click.echo(f"  Section: {section.name}")
+
+        if task.parent_id:
+            parent_task = api.get_task(task.parent_id)
+            click.echo(f"  Parent Task: {parent_task.content}")
+
+        click.echo()
+
+    except Exception as e:
+        click.echo(f"Error: Failed to fetch task: {e}")
+        raise click.Abort()
+
+
+def list_tasks(
+    token: str, project_name: Optional[str] = None, task_id: Optional[str] = None
+) -> None:
+    """List all tasks with hierarchical structure for subtasks, or get a specific task by ID."""
+    if task_id:
+        get_task_by_id(token, task_id)
+        return
     try:
         api = get_todoist_client(token)
 
